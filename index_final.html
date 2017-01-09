@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link href="https://fonts.googleapis.com/css?family=Ewert" rel="stylesheet">
+    <meta charset="utf-8">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dimple/2.1.6/dimple.latest.min.js"></script>
+    
+    <style>
+      circle.dimple-series-0 {
+        fill: red;
+        r: 10;
+      }
+
+      h2 {
+        text-align: center;
+      }
+      body {
+        width: 70vw;
+        height: 99vh;
+        margin: 0 auto;
+      }
+
+      div {
+        width: 100%;
+        height: 100;
+        margin: 0 auto;
+      }
+
+      svg {
+        width: 100%;
+        height: 100%;
+        margin: 0 auto;
+      }
+
+
+    </style>
+
+    <body>
+        <title>Visualizing Prosper Lending Return on Investment Using Dimple.js</title>
+        <div id="chartContainer1">
+          <p>The below scatter plot displays samples from the Prosper data set and shows the general trend that the higher the borrower interest rate, the higher the Return on Investment (ROI).  However, this trend breaks down at a rating of 1.  One can also see that as the rating decreases the variance increases.  As can be seen with the following charts, the return increases with lower Prosper Rating but the risk also increases due to increased variance.</p>
+        </div>
+        <div id="chartContainer2">
+          <p>The below scatter plot shows the average return on investment vs the average borrower interest rate for the entire data set.  This makes the trend of the above scatter plot more clear and shows again the increased return vs borrower rate except for borrower's who have a Prosper Rating of 1.</p>
+        </div>
+        <div id="chartContainer3">
+          <p>The below bar chart shows the general trend of the entire data set - the return on investment variance dencreases with borrower Prosper Rating.</p>
+        </div>
+
+    </body>
+
+    <script type="text/javascript">
+
+      function draw1(data) {
+          data.forEach(function(d) {
+                d['new_BorrowerRate'] = +d['BorrowerRate']*100;
+                d['new_EstimatedReturn'] = +d['EstimatedReturn']*100;
+          });
+      /*
+        D3.js setup code
+      */
+
+          "use strict";
+          var margin = 75,
+              width = 1400 - margin,
+              height = 600 - margin;
+
+          d3.select("#chartContainer1")
+            .append("h2")
+            .text("Prosper Return On Investment - Scatter");
+
+          var svg = d3.select("#chartContainer1")
+            .append("svg")
+              .attr("width", width + margin)
+              .attr("height", height + margin)
+            .append('g')
+                .attr('class','chart');
+
+      /*
+        Dimple.js Chart construction code
+      */
+          var myChart = new dimple.chart(svg, data);
+          var x = myChart.addMeasureAxis("x", "new_BorrowerRate"); 
+          var y = myChart.addMeasureAxis("y", "new_EstimatedReturn");
+          x.title = "Borrower Rate, %";
+          y.title = "Estimated Return, %"
+          // x.tickInterval = 10;
+          //y.tickInterval = .01;
+          myChart.addSeries(["Row", "ProsperRating..numeric."], dimple.plot.bubble);
+          var myLegend = myChart.addLegend(960, 50, 60, 300, "Right");
+          myChart.draw();
+
+          // orphan the legend so that it will not re-draw when chart re-draws
+          myChart.legends = [];
+
+          // add legend title
+          svg.selectAll("title_text")
+            .data(["Click to hide or show", "Prosper Rating:"])
+            .enter()
+            .append("text")
+              .attr("x", 930)
+              .attr("y", function (d, i) { return 20 + i * 14; })
+              .style("font-family", "sans-serif")
+              .style("font-size", "14px")
+              .style("color", "Black")
+              .text(function (d) { return d; });
+
+          // get unique list of Prosper Rating values
+          var filterValues = dimple.getUniqueValues(data, "ProsperRating..numeric.");
+      
+          // select all rectangles from orphaned legend
+          myLegend.shapes.selectAll("rect")
+        
+            // add click event to rectangle
+            .on("click", function (e) {
+          
+              var hide = false;
+              var newFilters = [];
+          
+              // if filters contain selected shape, hide it
+              filterValues.forEach(function (f) {
+                if (f === e.aggField.slice(-1)[0]) {
+                  hide = true;
+                } else {
+                  newFilters.push(f);
+                }
+              });
+              
+              // hide/show shapes
+              if (hide) {
+                d3.select(this).style("opacity", 0.2);
+              } else {
+                newFilters.push(e.aggField.slice(-1)[0]);
+                d3.select(this).style("opacity", 0.7);
+              }
+
+              // update filters
+              filterValues = newFilters;
+              
+              // filter data
+              myChart.data = dimple.filterData(data, "ProsperRating..numeric.", filterValues);
+              
+              // pass duration parameter for animation
+              myChart.draw(800);
+            });
+      };
+      function draw2(data) {
+          data.forEach(function(d) {
+                d['new_BorrowerRate'] = +d['BorrowerRate']*100;
+                d['new_EstimatedReturn'] = +d['EstimatedReturn']*100;
+      });
+      /*
+        D3.js setup code
+      */
+
+          "use strict";
+          var margin = 75,
+              width = 1400 - margin,
+              height = 600 - margin;
+
+          d3.select("#chartContainer2")
+            .append("h2")
+            .text("Prosper Return On Investment - Aggregated")
+
+          var svg = d3.select("#chartContainer2")
+            .append("svg")
+              .attr("width", width + margin)
+              .attr("height", height + margin)
+            .append('g')
+                .attr('class','chart');
+
+
+
+      /*
+        Dimple.js Chart construction code
+      */
+          var myChart = new dimple.chart(svg, data);
+          var x = myChart.addMeasureAxis("x", "new_BorrowerRate"); 
+          var y = myChart.addMeasureAxis("y", "new_EstimatedReturn");
+          x.title = "Averaged Borrower Rate, %";
+          y.title = "Averaged Estimated Return, %"
+          // x.tickInterval = 10;
+          //y.tickInterval = .01;
+          myChart.addSeries("ProsperRating..numeric.", dimple.plot.bubble);
+          var myLegend = myChart.addLegend(960, 50, 60, 300, "Right");
+          myChart.draw();
+
+        };
+
+      function draw3(data) {
+          data.forEach(function(d) {
+                d['new_BorrowerRate'] = +d['BorrowerRate']*100;
+                d['new_EstimatedReturn'] = +d['EstimatedReturn']*100;
+      });
+      /*
+        D3.js setup code
+      */
+
+          "use strict";
+          var margin = 75,
+              width = 1400 - margin,
+              height = 600 - margin;
+
+          d3.select("#chartContainer3")
+            .append("h2")
+            .text("Prosper Return On Investment - Variance")
+
+          var svg = d3.select("#chartContainer3")
+            .append("svg")
+              .attr("width", width + margin)
+              .attr("height", height + margin)
+            .append('g')
+                .attr('class','chart');
+
+      /*
+        Dimple.js Chart construction code
+      */
+          var myChart = new dimple.chart(svg, data);
+          var x = myChart.addCategoryAxis("x", "ProsperRating..numeric."); 
+          var y = myChart.addMeasureAxis("y", "new_EstimatedReturn");
+          x.title = "Numeric Prosper Rating";
+          y.title = "Return on Investment Variance";
+          // x.tickInterval = 10;
+          //y.tickInterval = .05;
+          //y.overrideMax = 0.3;
+          y.showGridlines = true;
+          y.tickFormat = ',1f';
+          myChart.addSeries(null, dimple.plot.bar);
+          myChart.draw();
+        };
+
+    </script>
+  </head>
+<body>
+  <script type="text/javascript">
+  /*
+    Use D3 (not dimple.js) to load the CSV file
+    and pass the contents of it to the draw function
+    */
+  d3.csv("pspr5.csv", draw1);
+  d3.csv("pspr2_agg.csv", draw2);
+  d3.csv("pspr2_var.csv", draw3);
+  </script>
+</body>
+</html>
